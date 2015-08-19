@@ -294,36 +294,44 @@
         fadeDuration = 0;
     }
 
-    // Never animate the showing of the splash screen.
-    if (visible) {
-        if (_imageView == nil) {
-            [self createViews];
-        }
-    } else if (fadeDuration == 0) {
-        [self destroyViews];
-    } else {
-      __weak __typeof(self) weakSelf = self;
+    [self setVisible:visible fadeDuration:fadeDuration];
+}
 
-      [UIView transitionWithView:self.viewController.view
-                        duration:fadeDuration
-                         options:UIViewAnimationOptionTransitionNone
-                      animations:^(void) {
-                          __typeof(self) strongSelf = weakSelf;
-                          if (strongSelf != nil) {
-                              dispatch_async(dispatch_get_main_queue(), ^{
-                                      [strongSelf->_activityView setAlpha:0];
-                                      [strongSelf->_imageView setAlpha:0];
-                              });
-                          }
-                      }
-                      completion:^(BOOL finished) {
-                          if (finished) {
-                              dispatch_async(dispatch_get_main_queue(), ^{
-                                      [weakSelf destroyViews];
-                              });
-                          }
-                      }
-      ];      
+- (void)setVisible:(BOOL)visible fadeDuration:(float)fadeDuration
+{
+    if ([NSThread isMainThread]) {
+        // Never animate the showing of the splash screen.
+        if (visible) {
+            if (_imageView == nil) {
+                [self createViews];
+            }
+        } else if (fadeDuration == 0) {
+            [self destroyViews];
+        } else {
+            __weak __typeof(self) weakSelf = self;
+
+            [UIView transitionWithView:self.viewController.view
+                              duration:fadeDuration
+                               options:UIViewAnimationOptionTransitionNone
+                            animations:^(void) {
+                                __typeof(self) strongSelf = weakSelf;
+                                if (strongSelf != nil) {
+                                    [strongSelf->_activityView setAlpha:0];
+                                    [strongSelf->_imageView setAlpha:0];
+                                }
+                            }
+                            completion:^(BOOL finished) {
+                                if (finished) {
+                                    [weakSelf destroyViews];
+                                }
+                            }
+            ];      
+        }
+    }
+    else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self setVisible:visible fadeDuration:fadeDuration];
+        });
     }
 }
 
